@@ -54,7 +54,7 @@ def build_guide(ctx) -> str:
             continue
 
         step_no = int(num)
-        if step_no not in done:
+        if step_no not in done and step_no != 7:
             lines.append("> 未运行")
             lines.append("")
             continue
@@ -317,6 +317,11 @@ def build_guide(ctx) -> str:
             lines.append("- 使用 `cryptography` 库的 `AESGCM` 提供认证加密")
             lines.append("- 使用随机 nonce，严禁 nonce 复用")
             lines.append("- 使用 KDF（如 PBKDF2 / HKDF）从口令派生密钥")
+            lines.append("")
+            lines.append("额外提醒：")
+            lines.append("- 永远不要自己实现生产级 AES（即使逻辑正确，也极易出现时序泄漏）")
+            lines.append("- 密文传输必须配合认证（AEAD），单纯 CBC/ECB 无法防御主动攻击")
+            lines.append("- 密钥长度建议至少 128 bit，优先 256 bit")
             lines.append("")
             continue
 

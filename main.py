@@ -65,6 +65,20 @@ def _print_banner():
     print("声明: 纯 Python 实现 AES-128，仅用于教学可视化，")
     print("      明确不用于生产环境。")
     print("═" * 64)
+    print()
+    print("【步骤说明】")
+    print("  1  明文分组与 PKCS#7 填充   UTF-8 编码、PKCS#7 填充、16 字节分组")
+    print("  2  密钥扩展                AES-128 密钥扩展，生成 11 个 Round Key")
+    print("  3  加密过程                逐轮跟踪 SubBytes/ShiftRows/MixColumns/AddRoundKey")
+    print("  4  解密过程                逆序解密，去填充后比对明文")
+    print("  5  分组模式对比            ECB / CBC / GCM 对比（图案泄露、IV 影响）")
+    print("  6  篡改检测                CBC 静默出错 vs GCM 认证失败")
+    print()
+    print("【快捷命令】")
+    print("  a  依次运行全部步骤 (1-6)")
+    print("  s  查看当前状态（明文/密钥/密文/已运行步骤）")
+    print("  q  退出并保存 Markdown 指南")
+    print("═" * 64)
 
 
 def main():
@@ -91,12 +105,14 @@ def main():
     else:
         key = os.urandom(16)
     print("密钥:", key.hex())
+    print()
 
     ctx = Context(plaintext=text, key_bytes=key)
 
     if args.run_all:
         for n in range(1, 7):
             try:
+                print(f"\n>>> 正在运行步骤 {n} ...")
                 run_step(ctx, n)
             except Exception as e:
                 F.err(f"Step {n} 失败: {e}")
@@ -107,17 +123,24 @@ def main():
 
     while True:
         try:
-            cmd = input("菜单 (1-6/a/s/q): ").strip().lower()
+            print()
+            cmd = input("请选择操作 [1-6 / a / s / q]：").strip().lower()
         except (EOFError, KeyboardInterrupt):
             print()
             break
+
         if cmd in ("q",):
             if ctx.steps_done:
                 save_guide(ctx)
+                print("已保存 Markdown 指南，程序退出。")
+            else:
+                print("未运行任何步骤，直接退出。")
             break
+
         if cmd == "a":
             for n in range(1, 7):
                 try:
+                    print(f"\n>>> 正在运行步骤 {n} ...")
                     run_step(ctx, n)
                 except Exception as e:
                     F.err(f"Step {n} 失败: {e}")
@@ -125,20 +148,27 @@ def main():
                 if not args.no_pause:
                     F.pause()
             continue
+
         if cmd == "s":
-            print(f"明文: {ctx.plaintext!r}")
-            print(f"密钥: {ctx.key_bytes.hex()}")
-            print(f"密文: {ctx.ciphertext.hex()}")
-            print(f"已运行步骤: {ctx.steps_done}")
+            print("─" * 40)
+            print(f"明文     : {ctx.plaintext!r}")
+            print(f"密钥     : {ctx.key_bytes.hex()}")
+            print(f"密文     : {ctx.ciphertext.hex() if ctx.ciphertext else '(尚未加密)'}")
+            print(f"已运行步骤: {sorted(ctx.steps_done) if ctx.steps_done else '无'}")
+            print("─" * 40)
             continue
+
         if cmd in ("1", "2", "3", "4", "5", "6"):
+            n = int(cmd)
             try:
-                run_step(ctx, int(cmd))
+                print(f"\n>>> 正在运行步骤 {n} ...")
+                run_step(ctx, n)
             except Exception as e:
                 F.err(str(e))
             continue
-        F.warn("非法输入")
 
+        F.warn("非法输入！请输入 1-6、a、s 或 q")
 
+		
 if __name__ == "__main__":
     main()
